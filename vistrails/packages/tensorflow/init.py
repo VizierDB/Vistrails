@@ -240,7 +240,7 @@ def register_optimizers(reg):
 
 
 def initialize():
-    from tensorflow.python.ops import standard_ops
+    from tensorflow.python.ops import *
 
     reg = get_module_registry()
 
@@ -257,7 +257,7 @@ def initialize():
     reg.add_module(AutoOperation)
 
     ops = set(wrapped)
-    ops.update(register_operations(reg, standard_ops, '', ops))
+    #ops.update(register_operations(reg, standard_ops, '', ops))
     ops.update(register_operations(reg, tensorflow.train, 'train',
                                    ops | optimizers))
     ops.update(register_operations(reg, tensorflow.nn, 'nn', ops))

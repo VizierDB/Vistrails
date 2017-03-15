@@ -74,7 +74,7 @@ class DAOList(dict):
                 if level and (not elem.tail or not elem.tail.strip()):
                     elem.tail = i
         indent(tree.getroot())
-        tree.write(filename)
+        tree.write(filename, "utf8")
 
     def read_xml_object(self, vtType, node):
         return self['xml'][vtType].fromXML(node)

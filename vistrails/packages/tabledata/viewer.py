@@ -68,6 +68,7 @@ class TableCellWidget(QCellWidget):
         layout.setContentsMargins(0,0,0,0)
 
         self.table = QtGui.QTableWidget()
+                            
 
         scrollarea = QtGui.QScrollArea(self)
         scrollarea.setWidgetResizable(True)
@@ -85,6 +86,9 @@ class TableCellWidget(QCellWidget):
         self.table.setColumnCount(table.columns + 1)
         self.table.setRowCount(table.rows)
 
+        if hasattr(table, 'get_cell_reason') and not self.table.hasMouseTracking():
+            self.table.setMouseTracking(True)
+
         for row in xrange(table.rows):
             item = QtGui.QTableWidgetItem()
             item.setData(QtCore.Qt.EditRole, row)
@@ -101,6 +105,14 @@ class TableCellWidget(QCellWidget):
                     elif not isinstance(elem, unicode):
                         elem = unicode(elem)
                     item = QtGui.QTableWidgetItem(elem)
+                    if hasattr(table, 'get_col_det'):
+                        if not table.get_col_det(row, col):
+                            item.setForeground(QtGui.QColor(255, 96, 96))
+                        if not table.get_row_det(row):
+                            item.setBackground(QtGui.QColor(200, 200, 200))
+                        reason = table.get_cell_reason(row, col)
+                        if reason:
+                            item.setStatusTip(reason)
                     item.setFlags(QtCore.Qt.ItemIsEnabled |
                                   QtCore.Qt.ItemIsSelectable)
                     self.table.setItem(row, col + 1, item)
