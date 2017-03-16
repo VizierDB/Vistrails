@@ -88,6 +88,9 @@ class TableCellWidget(QCellWidget):
 
         if hasattr(table, 'get_cell_reason') and not self.table.hasMouseTracking():
             self.table.setMouseTracking(True)
+            
+        if hasattr(table, 'explain_cell_clicked'):
+            self.table.itemClicked.connect(table.explain_cell_clicked)
 
         for row in xrange(table.rows):
             item = QtGui.QTableWidgetItem()

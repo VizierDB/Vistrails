@@ -40,7 +40,7 @@ import StringIO
 import csv
 import operator
 import os
-
+from PyQt4.QtGui import QMessageBox
 
 from vistrails.core.modules.config import ModuleSettings
 from vistrails.core.modules.vistrails_module import Module, ModuleError
@@ -154,13 +154,14 @@ def attr(e,n,v):
     return tmp(e).attr(n,v)
 
 class MimirCSVTable(TableObject):
-    def __init__(self, filename, csv_string, cols_det, rows_det, cell_reasons, header_present, delimiter,
+    def __init__(self, filename, query, csv_string, cols_det, rows_det, cell_reasons, header_present, delimiter,
                  skip_lines=0, dialect=None, use_sniffer=True):
         self._rows = None
 
         self.header_present = header_present
         self.delimiter = delimiter
         self.filename = filename
+        self.query = query
         self.csv_string = csv_string
         self.cols_det = cols_det
         self.rows_det = rows_det
@@ -248,6 +249,12 @@ class MimirCSVTable(TableObject):
             return self.cell_reasons[row][col]
         except:
             return ""
+
+    def explain_cell_clicked(self, tableItem):
+        print("explain_cell_clicked %d, %d" % (tableItem.row()+1, tableItem.column()-1))
+        if not self.get_col_det(tableItem.row(), tableItem.column()-1):
+            explainStr = _mimir.explainCell(self.query, tableItem.column()-1, tableItem.row()+1)
+            QMessageBox.about(tableItem.tableWidget().window(), "Explanation of Cell", "Explanation of Cell Uncertainty:\n%s" % (explainStr) )
 
     def get_column(self, index, numeric=False):
         if (index, numeric) in self.column_cache:
@@ -343,7 +350,7 @@ class QueryMimir(Module):
         #print type(colDet)
         
         try:
-            table = MimirCSVTable(os.path.join(cwd,res)+".csv", csvStrDet.csvStr(), csvStrDet.colsDet(), csvStrDet.rowsDet(), csvStrDet.celReasons(), header_present, delimiter, skip_lines,
+            table = MimirCSVTable(os.path.join(cwd,res)+".csv", query, csvStrDet.csvStr(), csvStrDet.colsDet(), csvStrDet.rowsDet(), csvStrDet.celReasons(), header_present, delimiter, skip_lines,
                              dialect, sniff_header)
         except InternalModuleError, e:
             e.raise_module_error(self)
@@ -383,7 +390,7 @@ class RawQuery(Module):
         #print type(colDet)
         
         try:
-            table = MimirCSVTable(os.path.join(cwd,"raw_query")+".csv", csvStrDet.csvStr(), csvStrDet.colsDet(), csvStrDet.rowsDet(), csvStrDet.celReasons(), header_present, delimiter, skip_lines,
+            table = MimirCSVTable(os.path.join(cwd,"raw_query")+".csv", raw_query, csvStrDet.csvStr(), csvStrDet.colsDet(), csvStrDet.rowsDet(), csvStrDet.celReasons(), header_present, delimiter, skip_lines,
                              dialect, sniff_header)
         except InternalModuleError, e:
             e.raise_module_error(self)
