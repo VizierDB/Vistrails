@@ -58,6 +58,51 @@ class TableCell(SpreadsheetCell):
         self.displayAndWait(TableCellWidget, (table,))
 
 
+class TableModel(QtCore.QAbstractTableModel): 
+    def __init__(self, parent=None, *args): 
+        super(TableModel, self).__init__()
+        self.datatable = None
+        self.detTextColor = QtGui.QColor(255, 96, 96)
+        self.rowDetBGColor = QtGui.QColor(200, 200, 200) 
+        self.headerNames = None
+
+    def update(self, dataIn):
+        self.datatable = dataIn
+        if self.datatable.names is not None:
+            self.headerNames = self.datatable.names   
+
+    def rowCount(self, parent=QtCore.QModelIndex()):
+        return self.datatable.rows 
+
+    def columnCount(self, parent=QtCore.QModelIndex()):
+        return self.datatable.columns
+
+    def data(self, index, role=QtCore.Qt.DisplayRole):
+        if role == QtCore.Qt.DisplayRole:
+            row = index.row()
+            col = index.column()
+            return self.datatable.get_column(col)[row]
+        if role == QtCore.Qt.BackgroundColorRole and hasattr(self.datatable, 'get_col_det'):
+            row = index.row()
+            col = index.column()
+            if not self.datatable.get_row_det(row):
+                return self.rowDetBGColor
+        if role == QtCore.Qt.ForegroundRole and hasattr(self.datatable, 'get_col_det'):
+            row = index.row()
+            col = index.column()
+            if not self.datatable.get_col_det(row, col):
+                return self.detTextColor
+        #return QtCore.QAbstractTableModel.data(self,index,role)
+
+    def flags(self, index):
+        return QtCore.Qt.ItemIsEnabled
+    
+    def headerData(self, section, orientation, role=QtCore.Qt.DisplayRole):
+        if role == QtCore.Qt.DisplayRole and orientation == QtCore.Qt.Horizontal:
+            return self.headerNames[section]
+        return QtCore.QAbstractTableModel.headerData(self, section, orientation, role)
+    
+
 class TableCellWidget(QCellWidget):
     save_formats = QCellWidget.save_formats + ["HTML files (*.html)"]
 
@@ -67,9 +112,8 @@ class TableCellWidget(QCellWidget):
         layout = QtGui.QVBoxLayout()
         layout.setContentsMargins(0,0,0,0)
 
-        self.table = QtGui.QTableWidget()
-                            
-
+        self.table = QtGui.QTableView()
+        
         scrollarea = QtGui.QScrollArea(self)
         scrollarea.setWidgetResizable(True)
         scrollarea.setWidget(self.table)
@@ -80,57 +124,28 @@ class TableCellWidget(QCellWidget):
     def updateContents(self, inputPorts):
         table, = inputPorts
         self.orig_table = table
+        
+        self.datamodel = TableModel(self.table)  
 
         self.table.setSortingEnabled(False)
-        self.table.clear()
-        self.table.setColumnCount(table.columns + 1)
-        self.table.setRowCount(table.rows)
-
+        
         if hasattr(table, 'get_cell_reason') and not self.table.hasMouseTracking():
             self.table.setMouseTracking(True)
             
         if hasattr(table, 'explain_cell_clicked'):
-            self.table.itemClicked.connect(table.explain_cell_clicked)
-
-        for row in xrange(table.rows):
-            item = QtGui.QTableWidgetItem()
-            item.setData(QtCore.Qt.EditRole, row)
-            item.setFlags(QtCore.Qt.NoItemFlags)
-            self.table.setItem(row, 0, item)
-
+            self.table.clicked.connect(table.explain_cell_clicked)
+    
         try:
-            for col in xrange(table.columns):
-                column = table.get_column(col)
-                for row in xrange(table.rows):
-                    elem = column[row]
-                    if isinstance(elem, bytes):
-                        elem = elem.decode('utf-8', 'replace')
-                    elif not isinstance(elem, unicode):
-                        elem = unicode(elem)
-                    item = QtGui.QTableWidgetItem(elem)
-                    if hasattr(table, 'get_col_det'):
-                        if not table.get_col_det(row, col):
-                            item.setForeground(QtGui.QColor(255, 96, 96))
-                        if not table.get_row_det(row):
-                            item.setBackground(QtGui.QColor(200, 200, 200))
-                        reason = table.get_cell_reason(row, col)
-                        if reason:
-                            item.setStatusTip(reason)
-                    item.setFlags(QtCore.Qt.ItemIsEnabled |
-                                  QtCore.Qt.ItemIsSelectable)
-                    self.table.setItem(row, col + 1, item)
+           self.datamodel.update(table)
+           self.table.setModel(self.datamodel)
         except:
-            self.table.setColumnCount(1)
             raise
 
-        if table.names is not None:
-            names = table.names
-        else:
-            names = ['col %d' % n for n in xrange(table.columns)]
-        self.table.setHorizontalHeaderLabels(['row' ] + names)
-        self.table.setSortingEnabled(True)
-        self.table.sortByColumn(0, QtCore.Qt.AscendingOrder)
+        
+        #self.table.setSortingEnabled(True)
+        #self.table.sortByColumn(0, QtCore.Qt.AscendingOrder)
         self.table.resizeColumnsToContents()
+        
 
     def write_html(self):
         document = ['<!DOCTYPE html>\n'

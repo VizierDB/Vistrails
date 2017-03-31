@@ -45,6 +45,7 @@ from PyQt4.QtGui import QMessageBox
 from vistrails.core.modules.config import ModuleSettings
 from vistrails.core.modules.vistrails_module import Module, ModuleError
 from ..tabledata.common import get_numpy, TableObject, Table, InternalModuleError
+from vistrails.core.modules.basic_modules import Null
 
 _mimir = None
 _jvmhelper = None
@@ -244,17 +245,21 @@ class MimirCSVTable(TableObject):
         except:
             return True
     
-    def get_cell_reason(self, row, col):
+    def get_cell_reason(self, index):
         try:
+            row = index.row()
+            col = index.column()
             return self.cell_reasons[row][col]
         except:
             return ""
 
-    def explain_cell_clicked(self, tableItem):
-        print("explain_cell_clicked %d, %d" % (tableItem.row()+1, tableItem.column()-1))
-        if not self.get_col_det(tableItem.row(), tableItem.column()-1):
-            explainStr = _mimir.explainCell(self.query, tableItem.column()-1, tableItem.row()+1)
-            QMessageBox.about(tableItem.tableWidget().window(), "Explanation of Cell", "Explanation of Cell Uncertainty:\n%s" % (explainStr) )
+    def explain_cell_clicked(self, index):
+        #print("explain_cell_clicked %d, %d" % (tableItem.row()+1, tableItem.column()-1))
+        row = index.row()
+        col = index.column()
+        if not self.get_col_det(row, col):
+            explainStr = _mimir.explainCell(self.query, col, row+1)
+            QMessageBox.about(None, "Explanation of Cell", "Explanation of Cell Uncertainty:\n%s" % (explainStr) )
 
     def get_column(self, index, numeric=False):
         if (index, numeric) in self.column_cache:
