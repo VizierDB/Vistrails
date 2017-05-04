@@ -904,6 +904,11 @@ class CachedInterpreter(vistrails.core.interpreter.base.BaseInterpreter):
     def clear_package(identifier):
         if CachedInterpreter.__instance:
             CachedInterpreter.__instance._clear_package(identifier)
+            
+    @staticmethod
+    def clean_modules_id(modules):
+        if CachedInterpreter.__instance:
+            CachedInterpreter.__instance.clean_modules(modules)
 
 ###############################################################################
 # Testing

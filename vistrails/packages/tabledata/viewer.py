@@ -134,7 +134,8 @@ class TableCellWidget(QCellWidget):
             
         if hasattr(table, 'explain_cell_clicked'):
             self.table.clicked.connect(table.explain_cell_clicked)
-    
+            self.table.verticalHeader().sectionClicked.connect(table.explain_row_clicked)
+            
         try:
            self.datamodel.update(table)
            self.table.setModel(self.datamodel)

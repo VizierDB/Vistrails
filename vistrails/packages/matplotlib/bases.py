@@ -92,19 +92,54 @@ class MplFigure(Module):
     _input_ports = [IPort("addPlot", "(MplPlot)", depth=1),
                     ("axesProperties", "(MplAxesProperties)"),
                     ("figureProperties", "(MplFigureProperties)"),
-                    ("setLegend", "(MplLegend)")]
+                    ("setLegend", "(MplLegend)"),
+                    ('sub_plots', 'basic:Boolean',
+                    {'optional': True, 'defaults': "['False']"}),
+                    ('sub_plots_sharex', 'basic:Boolean',
+                    {'optional': True, 'defaults': "['False']"}),
+                    ('sub_plots_sharey', 'basic:Boolean',
+                    {'optional': True, 'defaults': "['False']"}),
+                    ("subplot_axesProperties", "(MplAxesProperties)")]
 
     _output_ports = [("figure", "(MplFigure)")]
 
     def compute(self):
         # Create a figure
         figInstance = pylab.figure()
+        axesInstance = pylab.axes()
         pylab.hold(True)
 
         # Run the plots
         plots = self.get_input("addPlot")
-        for plot in plots:
-            plot(figInstance)
+        sub_plots = self.get_input("sub_plots")
+        sub_plots_sharex = self.get_input("sub_plots_sharex")
+        sub_plots_sharey = self.get_input("sub_plots_sharey")
+        cursubplot = None
+        if sub_plots:
+            for idx, plot in enumerate(plots):
+                if sub_plots_sharex and sub_plots_sharey and idx > 0:
+                    cursubplot = figInstance.add_subplot(len(plots), 1, idx+1, sharex=cursubplot, sharey=cursubplot)
+                elif sub_plots_sharex and idx > 0:
+                    cursubplot = figInstance.add_subplot(len(plots), 1, idx+1, sharex=cursubplot)
+                elif sub_plots_sharey and idx > 0:
+                    cursubplot = figInstance.add_subplot(len(plots), 1, idx+1, sharey=cursubplot)
+                else:
+                    cursubplot = figInstance.add_subplot(len(plots), 1, idx+1)
+                if idx < (len(plots) - 1):
+                    pylab.setp(cursubplot.get_xticklabels(), visible=False)
+                axesInstance.set_frame_on(False)
+                axesInstance.get_yaxis().set_visible(False)
+                axesInstance.get_xaxis().set_visible(False)
+                #figInstance.gca().set_axis_off()
+                #figInstance.patch.set_visible(False)
+                #figInstance.set
+                if self.has_input("subplot_axesProperties"):
+                    axes_props = self.get_input("subplot_axesProperties")
+                    axes_props.update_props(cursubplot)
+                plot(cursubplot)
+        else:
+            for plot in plots:
+                plot(figInstance)
 
         if self.has_input("figureProperties"):
             figure_props = self.get_input("figureProperties")
