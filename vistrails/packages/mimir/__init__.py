@@ -39,10 +39,22 @@ Mimir package for VisTrails.
 
 from __future__ import division
 
+from vistrails.core.packagemanager import get_package_manager
+
 identifier = 'org.vistrails.vistrails.mimir'
 name = 'Mimir'
 version = '0.1.0'
 
+
+def package_dependencies():
+    pm = get_package_manager()
+    tabledata_identifier = 'org.vistrails.vistrails.tabledata'
+    if pm.has_package(tabledata_identifier):
+        return [tabledata_identifier]
+    else:
+        return []
+    
+    
 def package_requirements():
     from vistrails.core.requirements import require_python_module
     require_python_module('py4j')

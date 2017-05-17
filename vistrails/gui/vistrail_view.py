@@ -128,10 +128,11 @@ class QVistrailView(QtGui.QWidget):
         
         self.set_controller(self.controller)
         pipeline_view.set_to_current()
-
+        
         self.tabs.setCurrentIndex(0)
         self.current_tab = self.stack.setCurrentIndex(0)
         self.pipeline_selected()
+        
         self.connect(self.tabs, QtCore.SIGNAL("currentChanged(int)"),
                      self.tab_changed)
         self.connect(self.tabs, QtCore.SIGNAL("tabCloseRequested(int)"),
@@ -150,6 +151,7 @@ class QVistrailView(QtGui.QWidget):
         _app.register_notification("reg_deleted_abstraction",
                                    self.controller.check_subworkflow_versions)
 
+        _app.qactions['provenance'].trigger()
         # self.controller = VistrailController()
         # self.controller.vistrail_view = self
         # self.connect(self.controller,

@@ -70,6 +70,7 @@ class MimirCallInterface(object):
 
 def jvm_gateway():
     gw = JavaGateway(GatewayClient(port=33388), auto_convert=True, callback_server_parameters=CallbackServerParameters())
+    #daemonize_connections=True,daemonize=True
     return gw
 
 def simple_jvm_helper(jvm_gateway):
@@ -140,5 +141,10 @@ def initialize():
         reg.add_module(module)
 
 
+def finalize():
+    print("Shutting Down Gateway...")
+    global _gateway
+    _gateway.shutdown()
+    
 ###############################################################################
 
