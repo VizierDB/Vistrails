@@ -44,6 +44,8 @@ from py4j.java_gateway import server_connection_started, server_connection_stopp
 from spylon.simple import SimpleJVMHelpers
 
 import base
+import argparse
+
 
 from .base import MimirOp, MimirOperation, \
     _modules as base_modules, wrapped
@@ -68,8 +70,8 @@ class MimirCallInterface(object):
     class Java:
         implements = ["mimir.PythonMimirCallInterface"]
 
-def jvm_gateway():
-    gw = JavaGateway(GatewayClient(port=33388), auto_convert=True, callback_server_parameters=CallbackServerParameters())
+def jvm_gateway(bindAddr, bindPort):
+    gw = JavaGateway(GatewayClient(address=bindAddr,port=bindPort), auto_convert=True, callback_server_parameters=CallbackServerParameters())
     #daemonize_connections=True,daemonize=True
     return gw
 
@@ -104,9 +106,17 @@ def post_shutdown(sender, **kwargs):
 
 
 def initialize():
+    #parser = argparse.ArgumentParser(description='Mimir Package Arguments')
+    #parser.add_argument('--bindAddr', dest='bindAddr', default='127.0.0.1',
+    #                    help='bind address for mimir connection server (default: 127.0.0.1)')
+    #parser.add_argument('--bindPort', dest='bindPort', default=33389,
+    #                    help='bind port for mimir connection server (default: 33389)')
+    
+    #args = parser.parse_args()
+    
     server_started.connect(started)
     global _gateway
-    _gateway = jvm_gateway()
+    _gateway = jvm_gateway('127.0.0.1', 33388)#args.bindAddr, args.bindPort)
     global _jvmhelper
     _jvmhelper = simple_jvm_helper(_gateway) 
     global _mimir
@@ -118,6 +128,15 @@ def initialize():
     _mimirLenses = []
     _mimirLenses.append( _mimir.getAvailableLenses().split (','))
     base_modules[1]._input_ports[1] = ('type', 'basic:String', {'entry_types': "['enum']", 'values': _mimirLenses, 'optional': False, 'defaults': "['TYPE_INFERENCE']"})
+    global _viztoolUsers
+    _viztoolUsers = []
+    _viztoolUsers.append(_mimir.getAvailableViztoolUsers().split(','))
+    base_modules[7]._input_ports[2] = ('users', 'basic:String', {'entry_types': "['enum']", 'values': _viztoolUsers, 'optional': False})
+    global _viztoolDeployTypes
+    _viztoolDeployTypes= []
+    _viztoolDeployTypes.append( _mimir.getAvailableViztoolDeployTypes().split (','))
+    base_modules[7]._input_ports[3] = ('type', 'basic:String', {'entry_types': "['enum']", 'values': _viztoolDeployTypes, 'optional': False, 'defaults': "['GIS']"})
+    
     server_stopped.connect(
         stopped, sender=_gateway.get_callback_server())
     server_connection_started.connect(

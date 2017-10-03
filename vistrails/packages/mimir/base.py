@@ -57,6 +57,8 @@ from vistrails.core.modules.basic_modules import Null
 _mimir = None
 _jvmhelper = None
 _mimirLenses = "[[]]"
+_viztoolUsers = "[[]]"
+_viztoolDeployTypes = "[[]]"
 
 class MimirOp(object):
     def __init__(self, op, args):
@@ -137,6 +139,48 @@ class MimirView(MimirOperation):
         query = self.get_input('query')
         self.set_output('output',
                         MimirOp(lambda x: _mimir.createView(x, query), [input]))
+
+class ViztoolDeploy(MimirOperation):
+    """deploys the input workflow query to basic demo web tool.
+    """
+    _input_ports = [('input', MimirOperation),
+                    ('name', 'basic:String'),
+                    ('type', 'basic:String', {'entry_types': "['enum']", 'values': _viztoolDeployTypes, 'optional': False, 'defaults': "['GIS']"}),
+                    ('users', 'basic:String', {'entry_types': "['enum']", 'values': _viztoolUsers, 'optional': False }),
+                    ('start', 'basic:String'),
+                    ('end', 'basic:String'),
+                    ('fields', 'basic:String',
+                    {'optional': True, 'defaults': "['*']"}),
+                    ('latlonfields', 'basic:String',
+                    {'optional': True, 'defaults': "['LATITUDE,LONGITUDE']"}),
+                    ('housenumberfield', 'basic:String',
+                    {'optional': True, 'defaults': "['STRNUMBER']"}),
+                    ('streetfield', 'basic:String',
+                    {'optional': True, 'defaults': "['STRNAME']"}),
+                    ('cityfield', 'basic:String',
+                    {'optional': True, 'defaults': "['CITY']"}),
+                    ('statefield', 'basic:String',
+                    {'optional': True, 'defaults': "['STATE']"}),
+                    ('orderbyfields', 'basic:String',
+                    {'optional': True, 'defaults': "['']"})
+                   ]
+
+    def compute(self):
+        input = self.get_input('input')
+        name = self.get_input('name')
+        type = self.get_input('type')
+        users = self.get_input_list('users')
+        start = self.get_input('start')
+        end = self.get_input('end')
+        fields = self.get_input('fields') 
+        latlonfields = self.get_input('latlonfields')
+        housenumberfield = self.get_input('housenumberfield')
+        streetfield = self.get_input('streetfield')
+        cityfield = self.get_input('cityfield')
+        statefield = self.get_input('statefield')
+        orderbyfields = self.get_input('orderbyfields')
+        self.set_output('output',
+                        MimirOp(lambda x: _mimir.vistrailsDeployWorkflowToViztool(x, name, type, _jvmhelper.to_scala_seq(users), start, end, fields, latlonfields, housenumberfield, streetfield, cityfield, statefield, orderbyfields), [input]))
 
 
 
@@ -473,26 +517,27 @@ class MimirCSVTable(TableObject):
         col = index.column()
         if not self.get_col_det(row, col):
             QApplication.setOverrideCursor(QtCore.Qt.WaitCursor)
-            
-            explainReasons = _mimir.explainCell(self.query, col, self.get_row_prov(row))
-            self.explainDialog = ExplanationDialog(explainReasons, self.query, self.get_row_prov(row), col, self.source_module_id)
-            QApplication.restoreOverrideCursor()
-            self.explainDialog.show()
-            #self.msgBox = QMessageBox()
-            #self.msgBox.setIcon(QMessageBox.Information)
-            #self.msgBox.setText("Explanation of Cell Uncertainty:\n\n%s" % (explainReasons.mkString(",\n\n")))
-            #self.msgBox.setWindowTitle("Explanation of Cell")
-            #ackButton = QPushButton('Repair...')
-            #ackButton.setProperty("row", row)
-            #ackButton.setProperty("col", col)
-            #ackButton.setProperty("reasons", explainReasons)
-            #self.msgBox.addButton(ackButton, QMessageBox.YesRole)
-            #self.msgBox.addButton(QPushButton('Close'), QMessageBox.NoRole)
-            #self.msgBox.buttonClicked.connect(self.feedbackCell)
-            #QApplication.restoreOverrideCursor()
-            #retval = self.msgBox.exec_()
-        
-            QApplication.restoreOverrideCursor()
+            try:
+                explainReasons = _mimir.explainCell(self.query, col, self.get_row_prov(row))
+                self.explainDialog = ExplanationDialog(explainReasons, self.query, self.get_row_prov(row), col, self.source_module_id)
+                QApplication.restoreOverrideCursor()
+                self.explainDialog.show()
+                #self.msgBox = QMessageBox()
+                #self.msgBox.setIcon(QMessageBox.Information)
+                #self.msgBox.setText("Explanation of Cell Uncertainty:\n\n%s" % (explainReasons.mkString(",\n\n")))
+                #self.msgBox.setWindowTitle("Explanation of Cell")
+                #ackButton = QPushButton('Repair...')
+                #ackButton.setProperty("row", row)
+                #ackButton.setProperty("col", col)
+                #ackButton.setProperty("reasons", explainReasons)
+                #self.msgBox.addButton(ackButton, QMessageBox.YesRole)
+                #self.msgBox.addButton(QPushButton('Close'), QMessageBox.NoRole)
+                #self.msgBox.buttonClicked.connect(self.feedbackCell)
+                #QApplication.restoreOverrideCursor()
+                #retval = self.msgBox.exec_()
+                QApplication.restoreOverrideCursor()
+            except:
+                QApplication.restoreOverrideCursor()
             
     def feedbackCell(self, button):
         if self.msgBox.buttonRole(button) == QMessageBox.YesRole:
@@ -684,6 +729,6 @@ class TableToPlot(Module):
         self.set_output('y', y_list)
     
 
-_modules = [MimirOperation, MimirLens, MimirView, LoadCSVIntoMimir, RawQuery, QueryMimir, TableToPlot]
+_modules = [MimirOperation, MimirLens, MimirView, LoadCSVIntoMimir, RawQuery, QueryMimir, TableToPlot, ViztoolDeploy]
 
-wrapped = set(['MimirLens', 'MimirView', 'LoadCSVIntoMimir', 'RawQuery', 'TableToPlot'])
+wrapped = set(['MimirLens', 'MimirView', 'LoadCSVIntoMimir', 'RawQuery', 'TableToPlot', 'ViztoolDeploy'])
