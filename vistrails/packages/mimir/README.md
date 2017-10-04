@@ -51,10 +51,10 @@ $ sbt runMimirVizier
 
 #####    GEOCODE
     	params: HOUSE_NUMBER(STRNUMBER_COL)
-			    STREET(STRNAME_COL)
-			    CITY(CITY_COL)
-			    STATE(STATE_COL)
-			    GEOCODER(GEOCODER_NAME)
+			STREET(STRNAME_COL)
+			CITY(CITY_COL)
+			STATE(STATE_COL)
+			GEOCODER(GEOCODER_NAME)
     	ex: HOUSE_NUMBER(STRNUMBER)
 		    STREET(STRNAME)
 		    CITY(CITY)
@@ -73,7 +73,7 @@ links with documentation
 | Name | Link |
 | ------ | ------ |
 | Mimir Lens Documentation | [https://github.com/UBOdin/mimir/wiki/Lenses-and-Adaptive-Schemas] |
-| Mimir Source: Github | [https://github.com/UBOdin/mimir/] [PlGh] |
+| Mimir Source: Github | [https://github.com/UBOdin/mimir/] |
 
 
 
