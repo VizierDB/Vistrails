@@ -15,12 +15,12 @@ $ sbt runMimirVizier
 #### Lens Params
 
 #####    MISSING_VALUE   
-        params:  ’COL_NAME’ 	
-        ex:  ‘SOME_COL’ 
+		params:  'COL_NAME' 	
+		ex:  'SOME_COL' 
  
 #####    SCHEMA_MATCHING
-	    params: ’COL_NAME type’	
-	    ex: ‘SOME_COL int’
+		params: 'COL_NAME type'	
+		ex: 'SOME_COL int'
 
 #####    TYPE_INFERENCE
     	param: percent that conforms
@@ -31,9 +31,9 @@ $ sbt runMimirVizier
     	ex: SOME_COL
 
 #####    COMMENT
-    	params: COMMENT(EXPRESSION, ‘A Comment’)
-    	ex: COMMENT(SOME_COL, ‘This value is uncertain’)
-    	ex: COMMENT(SOME_COL/1000, ’We lost precision here’)
+    	params: COMMENT(EXPRESSION, 'A Comment')
+    	ex: COMMENT(SOME_COL, 'This value is uncertain')
+    	ex: COMMENT(SOME_COL/1000, 'We lost precision here')
     	optional param: RESULT_COLUMNS(OUTPUT_COL_NAME[, OUTPUT_COL_NAME[, ...])
     	ex: RESULT_COLUMNS(UNCERTAIN_SOME_COL)
 
