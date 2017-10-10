@@ -679,7 +679,7 @@ class RawQuery(Module):
         #print type(colDet)
         
         try:
-            table = MimirCSVTable(os.path.join(cwd,"raw_query")+".csv", raw_query, csvStrDet.csvStr(), csvStrDet.colsDet(), csvStrDet.rowsDet(), csvStrDet.celReasons(), csvStrDet.prov(), header_present, delimiter, skip_lines,
+            table = MimirCSVTable(os.path.join(cwd,"raw_query")+".csv", raw_query, csvStrDet.csvStr(), csvStrDet.colsDet(), csvStrDet.rowsDet(), csvStrDet.celReasons(), csvStrDet.prov(), self.moduleInfo['moduleId'], header_present, delimiter, skip_lines,
                              dialect, sniff_header)
         except InternalModuleError, e:
             e.raise_module_error(self)
