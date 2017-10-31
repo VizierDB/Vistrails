@@ -386,7 +386,7 @@ class ExplanationDialog(QWidget):
    
 
 class MimirCSVTable(TableObject):
-    def __init__(self, filename, query, csv_string, cols_det, rows_det, cell_reasons, prov, source_module_id, header_present, delimiter,
+    def __init__(self, filename, query, csv_string, cols_det, rows_det, cell_reasons, prov, schema, source_module_id, header_present, delimiter,
                  skip_lines=0, dialect=None, use_sniffer=True):
         self._rows = None
 
@@ -399,6 +399,7 @@ class MimirCSVTable(TableObject):
         self.rows_det = rows_det
         self.cell_reasons = cell_reasons
         self.rows_prov = prov
+        self.schema = schema
         self.source_module_id = source_module_id
         self.skip_lines = skip_lines
         self.dialect = dialect
@@ -486,6 +487,9 @@ class MimirCSVTable(TableObject):
             return self.rows_prov[row]
         except:
             return ""
+    
+    def get_schema(self):
+        return self.schema
     
     def get_cell_reason(self, index):
         try:
@@ -639,7 +643,7 @@ class QueryMimir(Module):
         #print type(colDet)
         
         try:
-            table = MimirCSVTable(os.path.join(cwd,res)+".csv", query, csvStrDet.csvStr(), csvStrDet.colsDet(), csvStrDet.rowsDet(), csvStrDet.celReasons(), csvStrDet.prov(), self.moduleInfo['moduleId'], header_present, delimiter, skip_lines,
+            table = MimirCSVTable(os.path.join(cwd,res)+".csv", query, csvStrDet.csvStr(), csvStrDet.colsDet(), csvStrDet.rowsDet(), csvStrDet.celReasons(), csvStrDet.prov(), csvStrDet.schema(), self.moduleInfo['moduleId'], header_present, delimiter, skip_lines,
                              dialect, sniff_header)
         except InternalModuleError, e:
             e.raise_module_error(self)
@@ -679,7 +683,7 @@ class RawQuery(Module):
         #print type(colDet)
         
         try:
-            table = MimirCSVTable(os.path.join(cwd,"raw_query")+".csv", raw_query, csvStrDet.csvStr(), csvStrDet.colsDet(), csvStrDet.rowsDet(), csvStrDet.celReasons(), csvStrDet.prov(), self.moduleInfo['moduleId'], header_present, delimiter, skip_lines,
+            table = MimirCSVTable(os.path.join(cwd,"raw_query")+".csv", raw_query, csvStrDet.csvStr(), csvStrDet.colsDet(), csvStrDet.rowsDet(), csvStrDet.celReasons(), csvStrDet.prov(), csvStrDet.schema(), self.moduleInfo['moduleId'], header_present, delimiter, skip_lines,
                              dialect, sniff_header)
         except InternalModuleError, e:
             e.raise_module_error(self)
