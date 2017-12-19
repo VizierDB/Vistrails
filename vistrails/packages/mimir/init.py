@@ -45,7 +45,7 @@ from spylon.simple import SimpleJVMHelpers
 
 import base
 import argparse
-
+import os
 
 from .base import MimirOp, MimirOperation, \
     _modules as base_modules, wrapped
@@ -127,7 +127,11 @@ def initialize():
     global _mimirLenses
     _mimirLenses = []
     _mimirLenses.append( _mimir.getAvailableLenses().split (','))
-    base_modules[1]._input_ports[1] = ('type', 'basic:String', {'entry_types': "['enum']", 'values': _mimirLenses, 'optional': False, 'defaults': "['TYPE_INFERENCE']"})
+    base_modules[1]._input_ports[1] = ('type', 'basic:String', {'entry_types': "['enum']", 'values': _mimirLenses, 'optional': False, 'defaults': "['MISSING_VALUE']"})
+    global _mimirAdaptiveSchemas
+    _mimirAdaptiveSchemas = []
+    _mimirAdaptiveSchemas.append( _mimir.getAvailableAdaptiveSchemas().split (','))
+    base_modules[8]._input_ports[1] = ('type', 'basic:String', {'entry_types': "['enum']", 'values': _mimirAdaptiveSchemas, 'optional': False, 'defaults': "['TYPE_INFERENCE']"})
     global _viztoolUsers
     _viztoolUsers = []
     _viztoolUsers.append(_mimir.getAvailableViztoolUsers().split(','))

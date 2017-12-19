@@ -57,6 +57,7 @@ from vistrails.core.modules.basic_modules import Null
 _mimir = None
 _jvmhelper = None
 _mimirLenses = "[[]]"
+_mimirAdaptiveSchemas = "[[]]"
 _viztoolUsers = "[[]]"
 _viztoolDeployTypes = "[[]]"
 
@@ -112,7 +113,7 @@ class MimirLens(MimirOperation):
     """Creates a Lens in mimir specific type.
     """
     _input_ports = [('input', MimirOperation),
-                    ('type', 'basic:String', {'entry_types': "['enum']", 'values': _mimirLenses, 'optional': False, 'defaults': "['TYPE_INFERENCE']"}),
+                    ('type', 'basic:String', {'entry_types': "['enum']", 'values': _mimirLenses, 'optional': False, 'defaults': "['MISSING_VALUE']"}),
                     ('params', 'basic:String'),
                    ('make_input_certain', 'basic:Boolean',
                     {'optional': True, 'defaults': "['False']"}),
@@ -139,6 +140,21 @@ class MimirView(MimirOperation):
         query = self.get_input('query')
         self.set_output('output',
                         MimirOp(lambda x: _mimir.createView(x, query), [input]))
+        
+class MimirAdaptiveSchema(MimirOperation):
+    """Creates an Adaptive Schema in mimir specific type.
+    """
+    _input_ports = [('input', MimirOperation),
+                    ('type', 'basic:String', {'entry_types': "['enum']", 'values': _mimirAdaptiveSchemas, 'optional': False, 'defaults': "['TYPE_INFERENCE']"}),
+                    ('params', 'basic:String')]
+
+    def compute(self):
+        input = self.get_input('input')
+        type_ = self.get_input('type')
+        params = self.get_input_list('params')
+        self.set_output('output',
+                        MimirOp(lambda x: _mimir.createAdaptiveSchema(x, _jvmhelper.to_scala_seq(params), type_), [input]))
+                        
 
 class ViztoolDeploy(MimirOperation):
     """deploys the input workflow query to basic demo web tool.
@@ -162,7 +178,9 @@ class ViztoolDeploy(MimirOperation):
                     ('statefield', 'basic:String',
                     {'optional': True, 'defaults': "['STATE']"}),
                     ('orderbyfields', 'basic:String',
-                    {'optional': True, 'defaults': "['']"})
+                    {'optional': True, 'defaults': "['']"}),
+                    ('build_ops', 'basic:Boolean',
+                    {'optional': True, 'defaults': "['False']"})
                    ]
 
     def compute(self):
@@ -179,20 +197,33 @@ class ViztoolDeploy(MimirOperation):
         cityfield = self.get_input('cityfield')
         statefield = self.get_input('statefield')
         orderbyfields = self.get_input('orderbyfields')
-        self.set_output('output',
-                        MimirOp(lambda x: _mimir.vistrailsDeployWorkflowToViztool(x, name, type, _jvmhelper.to_scala_seq(users), start, end, fields, latlonfields, housenumberfield, streetfield, cityfield, statefield, orderbyfields), [input]))
-
-
+        build_ops = self.get_input('build_ops')
+        thisMimirOp = MimirOp(lambda x: _mimir.vistrailsDeployWorkflowToViztool(x, name, type, _jvmhelper.to_scala_seq(users), start, end, fields, latlonfields, housenumberfield, streetfield, cityfield, statefield, orderbyfields), [input])
+        self.set_output('output', thisMimirOp )
+        if build_ops:
+            operation_map = {}
+            mimirCallsResults = []
+            for op in [input]:
+                mimirCallsResults.append(op.build(operation_map))
+            mimirCallsResults.append(thisMimirOp.build(operation_map))
 
 class LoadCSVIntoMimir(MimirOperation):
     """A variable, that update its state between Mimir iterations.
     """
-    _input_ports = [('file', '(org.vistrails.vistrails.basic:File)')]
+    _input_ports = [('file', '(org.vistrails.vistrails.basic:File)'),
+                    ('delimeter', 'basic:String',
+                    {'optional': True, 'defaults': "[',']"}),
+                    ('detect_headers', 'basic:Boolean',
+                    {'optional': True, 'defaults': "['True']"}),
+                    ('infer_types', 'basic:Boolean',
+                    {'optional': True, 'defaults': "['True']"})]
     
     def compute(self):
         file = self.get_input('file').name
-        self.set_output('output', MimirOp(lambda: _mimir.loadCSV(file), []))
-
+        delim = self.get_input('delimeter')
+        detect_headers = self.get_input('detect_headers')
+        infer_types = self.get_input('infer_types')
+        self.set_output('output', MimirOp(lambda: _mimir.loadCSV(file, delim, infer_types, detect_headers), []))
 
 def count_lines(fp):
     lines = 0
@@ -733,6 +764,6 @@ class TableToPlot(Module):
         self.set_output('y', y_list)
     
 
-_modules = [MimirOperation, MimirLens, MimirView, LoadCSVIntoMimir, RawQuery, QueryMimir, TableToPlot, ViztoolDeploy]
+_modules = [MimirOperation, MimirLens, MimirView, LoadCSVIntoMimir, RawQuery, QueryMimir, TableToPlot, ViztoolDeploy, MimirAdaptiveSchema]
 
-wrapped = set(['MimirLens', 'MimirView', 'LoadCSVIntoMimir', 'RawQuery', 'TableToPlot', 'ViztoolDeploy'])
+wrapped = set(['MimirLens', 'MimirView', 'LoadCSVIntoMimir', 'RawQuery', 'TableToPlot', 'ViztoolDeploy', 'MimirAdaptiveSchema'])
