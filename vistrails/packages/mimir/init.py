@@ -40,6 +40,7 @@ from __future__ import division
 from vistrails.core import debug
 from vistrails.core.modules.config import ModuleSettings
 from vistrails.core.modules.module_registry import get_module_registry
+from vistrails.core.utils import VistrailsInternalError
 from py4j.java_gateway import server_connection_started, server_connection_stopped,  server_started, server_stopped, pre_server_shutdown, post_server_shutdown, JavaGateway, GatewayParameters, GatewayClient, CallbackServerParameters
 from spylon.simple import SimpleJVMHelpers
 
@@ -61,7 +62,7 @@ class MimirCallInterface(object):
         self.gateway = gateway
 
     def callToPython(self, obj):
-        
+
         print("JVM Who?")
         print(obj)
         self.gateway.jvm.System.out.println("jvm in your python")
@@ -111,14 +112,14 @@ def initialize():
     #                    help='bind address for mimir connection server (default: 127.0.0.1)')
     #parser.add_argument('--bindPort', dest='bindPort', default=33389,
     #                    help='bind port for mimir connection server (default: 33389)')
-    
+
     #args = parser.parse_args()
-    
+
     server_started.connect(started)
     global _gateway
     _gateway = jvm_gateway('127.0.0.1', 33388)#args.bindAddr, args.bindPort)
     global _jvmhelper
-    _jvmhelper = simple_jvm_helper(_gateway) 
+    _jvmhelper = simple_jvm_helper(_gateway)
     global _mimir
     _mimir = _jvmhelper.gateway.entry_point
     global _mimirCallInterface
@@ -140,7 +141,7 @@ def initialize():
     _viztoolDeployTypes= []
     _viztoolDeployTypes.append( _mimir.getAvailableViztoolDeployTypes().split (','))
     base_modules[7]._input_ports[3] = ('type', 'basic:String', {'entry_types': "['enum']", 'values': _viztoolDeployTypes, 'optional': False, 'defaults': "['GIS']"})
-    
+
     server_stopped.connect(
         stopped, sender=_gateway.get_callback_server())
     server_connection_started.connect(
@@ -153,15 +154,19 @@ def initialize():
         pre_shutdown, sender=_gateway.get_callback_server())
     post_server_shutdown.connect(
         post_shutdown, sender=_gateway.get_callback_server())
-    
+
     base._mimir = _mimir
     base._jvmhelper = _jvmhelper
-    
-    reg = get_module_registry()
 
-                    
-    for module in base_modules:
-        reg.add_module(module)
+    # Catch exception if module registry has not been initialized. This is
+    # currently necessary when running Mimir modules in Vizier without the
+    # Viztrails engine.
+    try:
+        reg = get_module_registry()
+        for module in base_modules:
+            reg.add_module(module)
+    except VistrailsInternalError as ex:
+        pass
 
 
 def finalize():
@@ -170,6 +175,5 @@ def finalize():
     _mimir.shutdown()
     global _gateway
     _gateway.shutdown()
-    
-###############################################################################
 
+###############################################################################
