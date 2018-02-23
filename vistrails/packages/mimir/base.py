@@ -447,6 +447,13 @@ class MimirCSVTable(TableObject):
             self.skip_lines += 1
 
         self.column_cache = {}
+    
+    @staticmethod
+    def ssafeStr(obj):
+        try: return str(obj)
+        except UnicodeEncodeError:
+            return obj.encode('ascii', 'ignore').decode('ascii')
+        return ""
 
     @staticmethod
     def read_string(csvstring, delimiter=None, header_present=True,
@@ -456,7 +463,7 @@ class MimirCSVTable(TableObject):
 
         try:
                 fp = StringIO.StringIO()
-                fp.write(csvstring)
+                fp.write(MimirCSVTable.ssafeStr(csvstring))
                 fp.seek(0)
                 if use_sniffer:
                     first_lines = ""
