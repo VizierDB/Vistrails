@@ -53,6 +53,7 @@ from vistrails.core.modules.config import ModuleSettings
 from vistrails.core.modules.vistrails_module import Module, ModuleError
 from ..tabledata.common import get_numpy, TableObject, Table, InternalModuleError
 from vistrails.core.modules.basic_modules import Null
+from vistrails.core.vistrail.pipeline import Pipeline
 
 _mimir = None
 _jvmhelper = None
@@ -596,7 +597,7 @@ class MimirCSVTable(TableObject):
                     usecols=[index])
         else:
             fp = StringIO.StringIO()
-            fp.write(self.csv_string)
+            fp.write(self.safeStr(self.csv_string))
             fp.seek(0)
             for i in xrange(self.skip_lines):
                 line = fp.readline()
@@ -629,11 +630,17 @@ class MimirCSVTable(TableObject):
         if self._rows is not None:
             return self._rows
         fp = StringIO.StringIO()
-        fp.write(self.csv_string)
+        fp.write(self.safeStr(self.csv_string))
         fp.seek(0)
         self._rows = count_lines(fp)
         self._rows -= self.skip_lines
         return self._rows
+    
+    def safeStr(self, obj):
+        try: return str(obj)
+        except UnicodeEncodeError:
+            return obj.encode('ascii', 'ignore').decode('ascii')
+        return ""
 
 
 class QueryMimir(Module):
