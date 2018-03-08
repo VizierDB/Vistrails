@@ -651,22 +651,27 @@ class MimirCSVTable(TableObject):
 
 
 class QueryMimir(Module):
-    """Instanciate and run a Mimir Op to make the results available.
+    """Instantiate and run a Mimir Op to make the results available.
     """
     _input_ports = [('output', MimirOperation, {'depth': 1}),
                     ('include_uncertainty', 'basic:Boolean',
                     {'optional': True, 'defaults': "['True']"}),
                     ('include_reasons', 'basic:Boolean',
-                    {'optional': True, 'defaults': "['False']"})]
+                    {'optional': True, 'defaults': "['False']"}),
+                    ('result_type', 'basic:String', 
+                    {'entry_types': "['enum']", 'values': "[['Table','JSON']]", 'optional': False, 'defaults': "['Table']"})]
+    
     
     _output_ports = [('column_count', '(org.vistrails.vistrails.basic:Integer)'),
             ('column_names', '(org.vistrails.vistrails.basic:List)'),
-            ('table', Table)]
+            ('table', Table),
+            ('json', '(basic:Dictionary)')]
     
     def compute(self):
         input = self.get_input('output')
         include_uncertainty = self.get_input('include_uncertainty')
         include_reasons = self.get_input('include_reasons')
+        result_type = self.get_input('result_type')
         
         operation_map = {}
         mimirCallsResults = []
@@ -681,21 +686,30 @@ class QueryMimir(Module):
         skip_lines = 0
         dialect = None
         sniff_header = True
-        csvStrDet = _mimir.vistrailsQueryMimir(query, include_uncertainty, include_reasons)
         cwd = os.getcwd()
         
         #colDet = csvStrDet.colsDet()
         #print type(colDet)
         
         try:
-            table = MimirCSVTable(os.path.join(cwd,res)+".csv", query, csvStrDet.csvStr(), csvStrDet.colsDet(), csvStrDet.rowsDet(), csvStrDet.celReasons(), csvStrDet.prov(), csvStrDet.schema(), self.moduleInfo['moduleId'], header_present, delimiter, skip_lines,
+            if result_type == "Table":
+                csvStrDet = _mimir.vistrailsQueryMimir(query, include_uncertainty, include_reasons)
+                table = MimirCSVTable(os.path.join(cwd,res)+".csv", query, csvStrDet.csvStr(), csvStrDet.colsDet(), csvStrDet.rowsDet(), csvStrDet.celReasons(), csvStrDet.prov(), csvStrDet.schema(), self.moduleInfo['moduleId'], header_present, delimiter, skip_lines,
                              dialect, sniff_header)
+                self.set_output('column_count', table.columns)
+                self.set_output('column_names', table.names)
+                self.set_output('table', table)
+            else:
+                jsonStr = _mimir.vistrailsQueryMimirJson(query, include_uncertainty, include_reasons)
+                jsonDict = json.loads(jsonStr)
+                self.set_output('column_count', len(jsonDict['schema']))
+                self.set_output('column_names', [d['name'] for d in jsonDict['schema']])
+                self.set_output('json', jsonDict)
         except InternalModuleError, e:
             e.raise_module_error(self)
 
-        self.set_output('column_count', table.columns)
-        self.set_output('column_names', table.names)
-        self.set_output('table', table)
+        
+        
         
         
 class RawQuery(Module):
@@ -705,37 +719,49 @@ class RawQuery(Module):
                     ('include_uncertainty', 'basic:Boolean',
                     {'optional': True, 'defaults': "['True']"}),
                     ('include_reasons', 'basic:Boolean',
-                    {'optional': True, 'defaults': "['False']"})]
+                    {'optional': True, 'defaults': "['False']"}),
+                    ('result_type', 'basic:String', 
+                    {'entry_types': "['enum']", 'values': "[['Table','JSON']]", 'optional': False, 'defaults': "['Table']"})]
     
     _output_ports = [('column_count', '(org.vistrails.vistrails.basic:Integer)'),
             ('column_names', '(org.vistrails.vistrails.basic:List)'),
-            ('table', Table)]
+            ('table', Table),
+            ('json', '(basic:Dictionary)')]
     
     def compute(self):
         include_uncertainty = self.get_input('include_uncertainty')
         include_reasons = self.get_input('include_reasons')
         raw_query = self.get_input('raw_query')
+        result_type = self.get_input('result_type')
         
         header_present = True
         delimiter = ","
         skip_lines = 0
         dialect = None
         sniff_header = True
-        csvStrDet = _mimir.vistrailsQueryMimir(raw_query, include_uncertainty, include_reasons)
         cwd = os.getcwd()
         
         #colDet = csvStrDet.colsDet()
         #print type(colDet)
         
         try:
-            table = MimirCSVTable(os.path.join(cwd,"raw_query")+".csv", raw_query, csvStrDet.csvStr(), csvStrDet.colsDet(), csvStrDet.rowsDet(), csvStrDet.celReasons(), csvStrDet.prov(), csvStrDet.schema(), self.moduleInfo['moduleId'], header_present, delimiter, skip_lines,
-                             dialect, sniff_header)
+            if result_type == "Table":
+                csvStrDet = _mimir.vistrailsQueryMimir(raw_query, include_uncertainty, include_reasons)
+                table = MimirCSVTable(os.path.join(cwd,"raw_query")+".csv", raw_query, csvStrDet.csvStr(), csvStrDet.colsDet(), csvStrDet.rowsDet(), csvStrDet.celReasons(), csvStrDet.prov(), csvStrDet.schema(), self.moduleInfo['moduleId'], header_present, delimiter, skip_lines,
+                                 dialect, sniff_header)
+                self.set_output('column_count', table.columns)
+                self.set_output('column_names', table.names)
+                self.set_output('table', table)
+            else:
+                jsonStr = _mimir.vistrailsQueryMimirJson(raw_query, include_uncertainty, include_reasons)
+                jsonDict = json.loads(jsonStr)
+                self.set_output('column_count', len(jsonDict['schema']))
+                self.set_output('column_names', [d['name'] for d in jsonDict['schema']])
+                self.set_output('json', jsonDict)
         except InternalModuleError, e:
             e.raise_module_error(self)
 
-        self.set_output('column_count', table.columns)
-        self.set_output('column_names', table.names)
-        self.set_output('table', table)
+        
         
         
 class TableToPlot(Module):
