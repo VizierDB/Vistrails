@@ -701,6 +701,7 @@ class QueryMimir(Module):
                 self.set_output('table', table)
             else:
                 jsonStr = _mimir.vistrailsQueryMimirJson(query, include_uncertainty, include_reasons)
+                #print(jsonStr)
                 jsonDict = json.loads(jsonStr)
                 self.set_output('column_count', len(jsonDict['schema']))
                 self.set_output('column_names', [d['name'] for d in jsonDict['schema']])
@@ -715,7 +716,8 @@ class QueryMimir(Module):
 class RawQuery(Module):
     """Instanciate and run a Mimir Op to make the results available.
     """
-    _input_ports = [('raw_query', 'basic:String'),
+    _input_ports = [('output', MimirOperation, {'depth': 1, 'optional': True}),
+                    ('raw_query', 'basic:String'),
                     ('include_uncertainty', 'basic:Boolean',
                     {'optional': True, 'defaults': "['True']"}),
                     ('include_reasons', 'basic:Boolean',
@@ -729,10 +731,23 @@ class RawQuery(Module):
             ('json', '(basic:Dictionary)')]
     
     def compute(self):
+        input = None
+        if self.has_input('output'):
+            input = self.get_input('output')
         include_uncertainty = self.get_input('include_uncertainty')
         include_reasons = self.get_input('include_reasons')
         raw_query = self.get_input('raw_query')
         result_type = self.get_input('result_type')
+        
+        operation_map = {}
+        mimirCallsResults = []
+        rq_input = ''
+        if input is not None:
+            for op in input:
+                mimirCallsResults.append(op.build(operation_map))
+            
+            for res in mimirCallsResults:
+                rq_input = res
         
         header_present = True
         delimiter = ","
@@ -746,14 +761,14 @@ class RawQuery(Module):
         
         try:
             if result_type == "Table":
-                csvStrDet = _mimir.vistrailsQueryMimir(raw_query, include_uncertainty, include_reasons)
+                csvStrDet = _mimir.vistrailsQueryMimir(rq_input, raw_query, include_uncertainty, include_reasons)
                 table = MimirCSVTable(os.path.join(cwd,"raw_query")+".csv", raw_query, csvStrDet.csvStr(), csvStrDet.colsDet(), csvStrDet.rowsDet(), csvStrDet.celReasons(), csvStrDet.prov(), csvStrDet.schema(), self.moduleInfo['moduleId'], header_present, delimiter, skip_lines,
                                  dialect, sniff_header)
                 self.set_output('column_count', table.columns)
                 self.set_output('column_names', table.names)
                 self.set_output('table', table)
             else:
-                jsonStr = _mimir.vistrailsQueryMimirJson(raw_query, include_uncertainty, include_reasons)
+                jsonStr = _mimir.vistrailsQueryMimirJson(rq_input, raw_query, include_uncertainty, include_reasons)
                 jsonDict = json.loads(jsonStr)
                 self.set_output('column_count', len(jsonDict['schema']))
                 self.set_output('column_names', [d['name'] for d in jsonDict['schema']])
