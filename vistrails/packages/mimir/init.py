@@ -171,8 +171,8 @@ def initialize():
 
 def finalize():
     print("Shutting Down Gateway...")
-    global _mimir
-    _mimir.shutdown()
+    #global _mimir
+    #_mimir.shutdown()
     global _gateway
     _gateway.shutdown()
 
